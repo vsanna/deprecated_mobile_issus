@@ -1,5 +1,8 @@
 {
-  "expo": {
-    "sdkVersion": "16.0.0"
-  }
+    "expo": {
+        "name": "Issus",
+        "description": "native app for Issus",
+        "slug": "issus",
+        "sdkVersion": "16.0.0"
+    }
 }

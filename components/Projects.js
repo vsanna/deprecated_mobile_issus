@@ -11,6 +11,16 @@ import {
   StyleSheet
 } from 'react-native';
 
+import {
+  List,
+  ListItem,
+  Header,
+  Right,
+  Left,
+  Body,
+  Title,
+} from 'native-base';
+
 const AUTH_TOKEN = 'auth_token';
 
 
@@ -23,7 +33,7 @@ export default class Projects extends Component {
         console.log("Token not set");
         this.props.navigation.navigate('login')
       } else {
-        this.setState({ token: token})
+        this.setState({ token: token});
         return token
       }
     } catch(error) {
@@ -66,11 +76,6 @@ export default class Projects extends Component {
     } catch(err) {
       console.log('authentication failed: ', err);
     }
-  }
-
-  static navigationOptions = {
-    title: 'projects',
-    headerBackTitle: null
   }
 
   constructor(props){
@@ -128,6 +133,30 @@ export default class Projects extends Component {
     })
   }
 
+  // move to sign out scene
+  async _signOut(){
+    try {
+      const token = await this.getToken();
+      let response = await fetch('http://localhost:4000/api/v1/sign_out', {
+        method: 'GET',
+        headers: {
+          'x-is-native': 'true',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer token=' + token
+        },
+      });
+      let responseJson = await response.json();
+      if (response.status >= 200 && response.status < 300) {
+        AsyncStorage.removeItem('auth_token');
+        this.props.navigation.navigate('login');
+      } else {
+        throw responseJson;
+      }
+    } catch(error) {
+      console.log('cannot get projects: ', error);
+    }
+  }
 
   _renderRow(data){
     return (
@@ -138,42 +167,70 @@ export default class Projects extends Component {
             { id: data.id, name: data.name }
           )
         }}>
-        <View>
-          <Text>{data.name}</Text>
-          <Text>last updated at: {data.updated_at}</Text>
-          <Text>issues: {data.issue_size}</Text>
-          <Text>{data.pinned
-            ? 'pinned'
-            : 'not pinned'}</Text>
-          </View>
-        </TouchableHighlight>
-      )
-    }
+        {data.name}
+        {/* <ListItem>
+          <Body>
+            <Text>{data.name}</Text>
+            <Text note>{data.issue_size} issues</Text>
+            <Text note>updated {data.updated_at}</Text>
+          </Body>
+        </ListItem> */}
+      </TouchableHighlight>
+    )
+  }
 
-    render() {
-      return(
-        <Layout>
-          {this.state.loading
-            ? <View><Text>loading...</Text></View>
-            : null}
+  static navigationOptions = {
+    title: 'projects',
+  }
+
+  _header(){
+    return (
+      <Header>
+        <Left>
+          <Button
+            transparent
+            onPress={() => this.props.navigation.navigate("DrawerOpen")}>
+            <Icon name="menu" />
+          </Button>
+        </Left>
+        <Body>
+          <Title>Lucy Chat</Title>
+        </Body>
+        <Right>
+          <Icon name="menu" />
+        </Right>
+      </Header>
+    )
+  }
+
+  render() {
+    return(
+      <Layout navigation={this.props.navigation} header={this._header()}>
+        {this.state.loading
+          ? <View><Text>loading...</Text></View>
+          : null}
+          <List>
             <ListView
               dataSource={this.state.dataSource}
               renderRow={this._renderRow.bind(this)}
               enableEmptySections={true}
             />
-          </Layout>
-        );
-      }
+          </List>
+
+          <TouchableHighlight onPress={this._signOut.bind(this)}><Text>signout</Text></TouchableHighlight>
+        </Layout>
+      );
     }
+  }
 
 
-    const styles = StyleSheet.create({
-      projectListItem: {
-        paddingTop: 12,
-        paddingBottom: 12,
-        paddingLeft: 16,
-        paddingRight: 16,
-        borderBottomWidth: StyleSheet.borderBottomWidth,
-        borderBottomColor: '#f2f2f2',
-      }
-    })
+  const styles = StyleSheet.create({
+    projectListItem: {
+      paddingTop: 12,
+      paddingBottom: 12,
+      paddingLeft: 16,
+      paddingRight: 16,
+      borderBottomWidth: StyleSheet.borderBottomWidth,
+      borderBottomColor: '#f2f2f2',
+    }
+  })

@@ -1,15 +1,50 @@
 import React, { Component } from 'react';
-import Layout from './commons/Layout.js';
-// import auth from '../modules/auth.js';
 import {
   TouchableHighlight,
   Text,
   View,
   TextInput,
-  AsyncStorage
+  AsyncStorage,
 } from 'react-native';
 
+import EStyleSheet from 'react-native-extended-stylesheet';
+
+import {
+  Form,
+  Item,
+  Input,
+  Label,
+  Button,
+  Header,
+  Right,
+  Left,
+  Body,
+  Title,
+  Container,
+  Content
+} from 'native-base';
+
+import { LinearGradient } from 'expo';
+// import LinearGradient from 'react-native-linear-gradient';
+
 const AUTH_TOKEN = 'auth_token';
+
+const rowStyles = {
+  sitename: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#888',
+    marginTop: 40
+  },
+  linearGradient: {
+    height: '100%',
+    padding: 16,
+    marginLeft: -16,
+    marginRight: -16,
+    marginTop: -16
+  },
+}
+const styles = EStyleSheet.create(rowStyles);
 
 export default class Login extends Component {
   async getToken() {
@@ -17,9 +52,10 @@ export default class Login extends Component {
       let token = await AsyncStorage.getItem(AUTH_TOKEN);
       if(!token) {
           console.log("Token not set");
+          // if( this.props.navigation.state.routeName !== 'login') { this.props.navigation.navigate('login'); }
       } else {
         this.setState({token: token});
-        this.verifyToken(token)
+        return token;
       }
     } catch(error) {
         console.log("Something went wrong");
@@ -43,7 +79,7 @@ export default class Login extends Component {
       let res = await response.text();
       if (response.status >= 200 && response.status < 300) {
         //Verified token means user is logged in so we redirect him to home.
-        this.props.navigation.navigate('projects');
+        this.props.navigation.navigate('issues');
       } else {
           //Handle error
           let error = res;
@@ -72,35 +108,7 @@ export default class Login extends Component {
     }
   }
 
-  // async verifyToken(token) {
-  //   try {
-  //     let response = await fetch('http://localhost:4000/api/v1/verify_token', {
-  //           method: 'POST',
-  //           headers: {
-  //             'x-is-native': 'true',
-  //             'Accept': 'application/json',
-  //             'Content-Type': 'application/json',
-  //             'Authorization': 'Bearer token=' + token
-  //           },
-  //           body: JSON.stringify({
-  //             token: token
-  //           })
-  //         });
-  //     let res = await response.json();
-  //     if (response.status >= 200 && response.status < 300) {
-  //     } else {
-  //       let error = res;
-  //       throw error;
-  //     }
-  //   } catch(error) {
-  //     console.log("error response: " + error);
-  //     // this.removeItem();
-  //     // if ( this.props.navigation.routeName == 'login' ){ return; }
-  //     // this.props.navigation.navigate('login')
-  //   }
-  // }
-
-  async authenticateToken(routeName){
+  async authenticateToken(){
     console.log('started authenticate');
     try {
       let token = await this.getToken();
@@ -118,8 +126,7 @@ export default class Login extends Component {
   }
 
   componentWillMount() {
-    AsyncStorage.getItem(AUTH_TOKEN).then((val) => {console.log(val)})
-    this.authenticateToken('projects');
+    this.authenticateToken();
   }
 
   constructor(props){
@@ -130,12 +137,6 @@ export default class Login extends Component {
       alert: null,
       token: null
     }
-  }
-
-  _onForward(){
-    this.props.navigation.navigate('projects', {
-      someProp: 'hogehoge'
-    })
   }
 
   _showSignup(){
@@ -177,32 +178,41 @@ export default class Login extends Component {
 
   render() {
     return (
-      <Layout>
-        <Text>Issus Login</Text>
-        {this.state.alert
-          ? <View><Text>{this.state.alert}</Text></View>
-          : null }
-          <TextInput
-            ref='email'
-            onChangeText={(email) => { this.setState({email})}}
-            style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-            placeholder='email'
-          />
-          <TextInput
-            ref='password'
-            onChangeText={(password) => { this.setState({password})}}
-            secureTextEntry={true}
-            keyboardType='email-address'
-            style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-            placeholder='password'
-          />
-          <TouchableHighlight onPress={this._signIn.bind(this)}>
-            <Text>login</Text>
-          </TouchableHighlight>
-          <TouchableHighlight onPress={this._showSignup.bind(this)}>
-            <Text>new one?</Text>
-          </TouchableHighlight>
-        </Layout>
-      )
-    }
+      <Container>
+        <Content>
+          <LinearGradient
+            colors={['#358594', '#65b5c4']}
+            style={rowStyles.linearGradient}>
+              <Text style={styles.sitename}>Issus Login</Text>
+              <Form>
+                <Item floatingLabel>
+                  <Label>email</Label>
+                  <Input
+                    ref='email'
+                    keyboardType='email-address'
+                    onChangeText={(email) => { this.setState({email})}} />
+                </Item>
+                <Item floatingLabel last>
+                  <Label>Password</Label>
+                  <Input
+                    ref='password'
+                    onChangeText={(password) => { this.setState({password})}}
+                    secureTextEntry={true} />
+                </Item>
+              </Form>
+              {this.state.alert
+                ? <View><Text>{this.state.alert}</Text></View>
+                : null }
+              <Button transparent block primary
+                onPress={this._signIn.bind(this)}>
+                <Text>ログイン</Text>
+              </Button>
+              <TouchableHighlight onPress={this._showSignup.bind(this)}>
+                <Text style={{textAlign: 'center', fontSize: 11, color: '#888'}}>アカウントを作る</Text>
+              </TouchableHighlight>
+          </LinearGradient>
+        </Content>
+      </Container>
+    )
   }
+}

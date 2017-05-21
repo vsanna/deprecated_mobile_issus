@@ -11,10 +11,23 @@ import {
   StyleSheet
 } from 'react-native';
 
+import {
+  Container,
+  Content,
+  Button,
+  Icon,
+  List,
+  ListItem,
+  Header,
+  Right,
+  Left,
+  Body,
+  Title,
+} from 'native-base';
+
 const AUTH_TOKEN = 'auth_token';
 
-
-export default class Project extends Component {
+export default class Issues extends Component {
 
   async getToken (){
     try {
@@ -70,10 +83,6 @@ export default class Project extends Component {
     }
   }
 
-  static navigationOptions = {
-    headerBackTitle: null,
-  }
-
   constructor(props){
     super(props);
     const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
@@ -85,8 +94,7 @@ export default class Project extends Component {
   }
 
   componentWillMount() {
-    AsyncStorage.getItem(AUTH_TOKEN).then((val) => {console.log(val)})
-    this.authenticateToken('project');
+    this.authenticateToken();
   }
 
   componentDidMount(){
@@ -108,7 +116,10 @@ export default class Project extends Component {
     try {
       this.setState({loading: true})
       token = await this.getToken();
-      const url = `http://localhost:4000/api/v1/projects/${this.props.navigation.state.params.id}/issues`
+      const fetch_all = false
+      const url = fetch_all
+                    ? `http://localhost:4000/api/v1/projects/${this.props.navigation.state.params.id}/issues`
+                    : 'http://localhost:4000/api/v1/issues';
       let response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -120,7 +131,11 @@ export default class Project extends Component {
       });
       let responseJson = await response.json();
       if (response.status >= 200 && response.status < 300) {
-        return responseJson.open_issues;
+        if (fetch_all) {
+          return responseJson.issues;
+        } else {
+          return responseJson.open_issues.push(responseJson.closed_issues);
+        }
       } else {
         throw responseJson;
       }
@@ -136,39 +151,43 @@ export default class Project extends Component {
       <TouchableHighlight style={styles.projectListItem}
         onPress={()=>{
           this.props.navigation.navigate(
-            'project',
-            { id: data.id }
+            'projects',
+            { id: this.props.navigation.state.params.id, name: this.props.navigation.state.params.name }
           )
         }}>
-        <Text>{data.name}</Text>
+        <ListItem>
+          <Body>
+            <Text>{data.name}</Text>
+          </Body>
+        </ListItem>
       </TouchableHighlight>
     )
   }
 
   render() {
     return(
-      <Layout>
-        {this.state.loading
-          ? <View><Text>loading...</Text></View>
-          : null}
-        <ListView
-          dataSource={this.state.dataSource}
-          renderRow={this._renderRow.bind(this)}
-          enableEmptySections={true}
-        />
-      </Layout>
+      <Container>
+        <Header>
+          <Left>
+            <Button transparent onPress={()=>{this.props.navigation.navigate('DrawerOpen')}}>
+              <Icon name='menu' />
+            </Button>
+          </Left>
+          <Body>
+            <Title>Issues</Title>
+          </Body>
+          <Right />
+        </Header>
+        <Content>
+          <List>
+            <ListView
+              dataSource={this.state.dataSource}
+              renderRow={this._renderRow.bind(this)}
+              enableEmptySections={true}
+            />
+          </List>
+        </Content>
+      </Container>
     );
   }
 }
-
-
-const styles = StyleSheet.create({
-  projectListItem: {
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    borderBottomWidth: StyleSheet.borderBottomWidth,
-    borderBottomColor: '#f2f2f2',
-  }
-})
