@@ -28,26 +28,13 @@ import Signup from './components/Signup.js';
 import Issues from  './components/Issues.js';
 import Form from './components/Form.js';
 import Sidebar from './components/Sidebar.js';
-
-class Notifications extends React.Component {
-  render(){
-    return (
-      <View><Text>notificationsが並ぶ</Text></View>
-    )
-  }
-}
-class Notification extends React.Component {
-  render(){
-    return (
-      <View><Text>web viewで通知先表示する</Text></View>
-    )
-  }
-}
-
+import Notifications from './components/Notifications.js';
+import Notification from './components/Notification.js'
 
 const IssuesPart = StackNavigator(
   {
-    issues: { screen: Issues }
+    issues: { screen: Issues },
+    form: { screen: Form }
   },
   {
     headerMode: 'none',
@@ -79,7 +66,7 @@ const Home = TabNavigator(
               vertical
               active={props.navigationState.index === 0}
               onPress={() => props.navigation.navigate("issues")}>
-              <Icon name="note" />
+              <Icon name="add" />
             </Button>
             <Button
               vertical

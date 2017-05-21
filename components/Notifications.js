@@ -29,7 +29,7 @@ import {
 
 const AUTH_TOKEN = 'auth_token';
 
-export default class Issues extends Component {
+export default class Notifications extends Component {
 
   async getToken (){
     try {
@@ -58,9 +58,7 @@ export default class Issues extends Component {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer token=' + token
             },
-            body: JSON.stringify({
-              token: token
-            })
+            body: JSON.stringify({ token: token })
           });
       let res = await response.json();
       if (response.status >= 200 && response.status < 300) {
@@ -87,10 +85,8 @@ export default class Issues extends Component {
 
   constructor(props){
     super(props);
-    const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
     this.state = {
-      // dataSource: ds.cloneWithRows([]),
-      issues: [],
+      notifications: [],
       token: null,
       loading: false,
       page: 1,
@@ -100,39 +96,28 @@ export default class Issues extends Component {
 
   componentWillMount() {
     this.authenticateToken();
-    (async ()=>{
-      const items = await this._getProjects();
-      this._setProjects(items);
-    })
   }
 
   componentDidMount(){
     (async ()=>{
-      const items = await this._getIssues();
-      this._setIssues(items);
+      const items = await this._getNotifications();
+      this._setNotifications(items);
     })().catch((e) => {
       console.log(e);
     })
   }
 
-  _setIssues(items){
+  _setNotifications(items){
     this.setState({
-      issues: items,
-      // dataSource: this.state.dataSource.cloneWithRows(items)
+      notifications: items,
     })
   }
 
-  async _getIssues() {
+  async _getNotifications() {
     try {
       this.setState({loading: true})
       token = await this.getToken();
-      const fetch_all = !(this.props.navigation.params && this.props.navigation.params.id);
-      const url = fetch_all
-                    ? 'http://localhost:4000/api/v1/issues/all' + '?page=' + this.state.page
-                    : `http://localhost:4000/api/v1/projects/${this.props.navigation.state.params.id}/issues?page=${this.state.page}`;
-
-
-      if (!fetch_all){debugger;}
+      const url = 'http://localhost:4000/api/v1/notifications' + '?page=' + this.state.page;
 
       let response = await fetch(url, {
             method: 'GET',
@@ -146,11 +131,7 @@ export default class Issues extends Component {
       let responseJson = await response.json();
       if (response.status >= 200 && response.status < 300) {
         this.setState({page: this.state.page + 1});
-        if (fetch_all) {
-          return responseJson.issues;
-        } else {
-          return responseJson.open_issues.push(responseJson.closed_issues);
-        }
+        return responseJson.notifications;
       } else {
         throw responseJson;
       }
@@ -161,58 +142,21 @@ export default class Issues extends Component {
     }
   }
 
-
-  async _getProjects() {
-    try {
-      this.setState({loading: true})
-      const token = await this.getToken();
-      let response = await fetch('http://localhost:4000/api/v1/projects', {
-        method: 'GET',
-        headers: {
-          'x-is-native': 'true',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token=' + token
-        },
-      });
-      let responseJson = await response.json();
-      if (response.status >= 200 && response.status < 300) {
-        return responseJson.projects;
-      } else {
-        throw responseJson;
-      }
-    } catch(error) {
-      console.log('cannot get projects: ', error);
-    } finally {
-      this.setState({loading: false})
-    }
-  }
-
-  _setProjects(items){
-    debugger;
-    this.props.navigation.setParams({
-      projects: items
-    })
-  }
-
   _renderRow(data){
-    if ( data.type == 'date' ){
-      return <Separator bordered><Text>{data.data}</Text></Separator>;
-    } else {
-      return (
         <ListItem
-          onPress={()=>{ this.props.navigation.navigate('form', { id: 'hoge', name: 'hoge' }) }}>
-          <Body><Text>{data.data.name}</Text></Body>
+          onPress={()=>{ this.props.navigation.navigate('notification', { href: data.href }) }}>
+          <Body>
+            <Text>{data.message}</Text>
+            <Text note>{data.sub_message}</Text>
+          </Body>
         </ListItem>
-      )
-    }
   }
 
   _onRefresh(){
     this.setState({refreshing: true});
     (async ()=>{
       const items = await this._getIssues();
-      const newIssues = this.state.issues.slice().concat(items);
+      const newIssues = this.state.issues.splice().concat(items);
       this._setIssues(newIssues);
       this.setState({refreshing: false});
     })().catch((e) => {
@@ -239,14 +183,13 @@ export default class Issues extends Component {
             </Button>
           </Left>
           <Body>
-            <Title>Issues</Title>
+            <Title>Notifications</Title>
           </Body>
           <Right />
         </Header>
-        {/* <Content refreshControl={this.renderRefreshControl()}> */}
         <Content>
           <List
-            dataArray={this.state.issues}
+            dataArray={this.state.notifications}
             onEndReached={this._onRefresh.bind(this)}
             renderRow={this._renderRow.bind(this) } />
           {this.props.refreshing

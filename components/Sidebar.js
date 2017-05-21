@@ -42,20 +42,14 @@ export default class Sidebar extends Component {
             />
           </Image>
           <List
-            dataArray={[
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-              {id: 1, name: 'asdf'},
-            ]}
+            dataArray={this.props.navigation.state.params && this.props.navigation.state.params.projects
+                         ? this.props.navigation.state.params
+                         : []}
             renderRow={data => {
               return (
                 <ListItem
                   button
-                  onPress={() => this.props.navigation.navigate('project', {id: data.id, name: data.name})}>
+                  onPress={() => this.props.navigation.navigate('issues', {id: data.id, name: data.name})}>
                   <Text>{data.name}</Text>
                 </ListItem>
               );

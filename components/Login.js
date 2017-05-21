@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+
 import {
   TouchableHighlight,
   Text,
@@ -21,7 +22,7 @@ import {
   Body,
   Title,
   Container,
-  Content
+  Content,
 } from 'native-base';
 
 import { LinearGradient } from 'expo';
@@ -121,10 +122,6 @@ export default class Login extends Component {
   }
 
 
-  static navigationOptions = {
-    title: 'login'
-  }
-
   componentWillMount() {
     this.authenticateToken();
   }
@@ -164,7 +161,7 @@ export default class Login extends Component {
       let responseJson = await response.json();
       if ( response.status >= 200 && response.status < 300 ) {
         this.storeToken(responseJson.token);
-        this.props.navigation.navigate('projects');
+        this.props.navigation.navigate('issues');
       } else {
         // ログイン失敗
         this.setState({
@@ -178,41 +175,41 @@ export default class Login extends Component {
 
   render() {
     return (
-      <Container>
-        <Content>
-          <LinearGradient
-            colors={['#358594', '#65b5c4']}
-            style={rowStyles.linearGradient}>
-              <Text style={styles.sitename}>Issus Login</Text>
-              <Form>
-                <Item floatingLabel>
-                  <Label>email</Label>
-                  <Input
-                    ref='email'
-                    keyboardType='email-address'
-                    onChangeText={(email) => { this.setState({email})}} />
-                </Item>
-                <Item floatingLabel last>
-                  <Label>Password</Label>
-                  <Input
-                    ref='password'
-                    onChangeText={(password) => { this.setState({password})}}
-                    secureTextEntry={true} />
-                </Item>
-              </Form>
-              {this.state.alert
-                ? <View><Text>{this.state.alert}</Text></View>
-                : null }
-              <Button transparent block primary
-                onPress={this._signIn.bind(this)}>
-                <Text>ログイン</Text>
-              </Button>
-              <TouchableHighlight onPress={this._showSignup.bind(this)}>
-                <Text style={{textAlign: 'center', fontSize: 11, color: '#888'}}>アカウントを作る</Text>
-              </TouchableHighlight>
-          </LinearGradient>
-        </Content>
-      </Container>
+        <Container>
+          <Content>
+            <LinearGradient
+              colors={['#358594', '#65b5c4']}
+              style={rowStyles.linearGradient}>
+                <Text style={styles.sitename}>Issus Login</Text>
+                <Form>
+                  <Item floatingLabel>
+                    <Label>email</Label>
+                    <Input
+                      ref='email'
+                      keyboardType='email-address'
+                      onChangeText={(email) => { this.setState({email})}} />
+                  </Item>
+                  <Item floatingLabel last>
+                    <Label>Password</Label>
+                    <Input
+                      ref='password'
+                      onChangeText={(password) => { this.setState({password})}}
+                      secureTextEntry={true} />
+                  </Item>
+                </Form>
+                {this.state.alert
+                  ? <View><Text>{this.state.alert}</Text></View>
+                  : null }
+                <Button transparent block primary
+                  onPress={this._signIn.bind(this)}>
+                  <Text>ログイン</Text>
+                </Button>
+                <TouchableHighlight onPress={this._showSignup.bind(this)}>
+                  <Text style={{textAlign: 'center', fontSize: 11, color: '#888'}}>アカウントを作る</Text>
+                </TouchableHighlight>
+            </LinearGradient>
+          </Content>
+        </Container>
     )
   }
 }

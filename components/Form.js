@@ -61,7 +61,7 @@ export default class Login extends Component {
     }
   }
 
-  async authenticateToken(routeName){
+  async authenticateToken(){
     console.log('started authenticate');
     try {
       let token = await this.getToken();
@@ -74,7 +74,7 @@ export default class Login extends Component {
   }
 
   componentWillMount() {
-    this.authenticateToken('projects');
+    this.authenticateToken();
     (async ()=>{
       await Expo.Font.loadAsync({
         'Roboto': require('native-base/Fonts/Roboto.ttf'),
