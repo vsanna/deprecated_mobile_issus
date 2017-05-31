@@ -9,7 +9,8 @@ import {
   View,
   AsyncStorage,
   StyleSheet,
-  RefreshControl
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 
 import {
@@ -17,6 +18,8 @@ import {
   Content,
   Button,
   Icon,
+  Input,
+  Item,
   List,
   ListItem,
   Separator,
@@ -85,40 +88,76 @@ export default class Issues extends Component {
     }
   }
 
+  // app起動時に呼ばれる
   constructor(props){
     super(props);
-    const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+
+    const ds = new ListView.DataSource({
+      rowHasChanged           : (row1, row2) => row1 !== row2,
+      sectionHeaderHasChanged : (s1, s2) => s1 !== s2
+    })
+
     this.state = {
-      // dataSource: ds.cloneWithRows([]),
       issues: [],
+      dataSource: ds.cloneWithRowsAndSections([[]]),
       token: null,
       loading: false,
       page: 1,
-      refreshing: false
+      refreshing: false,
     };
   }
 
+  // 画面遷移のたびに動く
   componentWillMount() {
     this.authenticateToken();
-    (async ()=>{
-      const items = await this._getProjects();
-      this._setProjects(items);
-    })
   }
 
+  // 画面遷移のたびにうごく
   componentDidMount(){
     (async ()=>{
-      const items = await this._getIssues();
+      console.log('component did mount and get issue!')
+      let items = await this._getIssues();
       this._setIssues(items);
     })().catch((e) => {
       console.log(e);
     })
   }
 
+
+  async _searchIssues(){
+    this.setState({page: 1})
+    try {
+      this.setState({loading: true})
+      token = await this.getToken();
+      const url = 'http://localhost:4000/api/v1/search' + '?page=' + this.state.page + '&query=' + this.state.searchQuery;
+      let response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'x-is-native': 'true',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer token=' + token
+            },
+      });
+      let responseJson = await response.json();
+      if (response.status >= 200 && response.status < 300) {
+        this.setState({page: this.state.page + 1});
+        return responseJson.issues;
+      } else {
+        throw responseJson;
+      }
+    } catch(error) {
+      console.log('cannot get issues: ', error);
+    } finally {
+      this.setState({loading: false})
+    }
+  }
+
   _setIssues(items){
+    const newIssues = this.state.issues.slice().concat(items);
     this.setState({
-      issues: items,
-      // dataSource: this.state.dataSource.cloneWithRows(items)
+      issues: newIssues,
+      dataSource: this.state.dataSource.cloneWithRowsAndSections(newIssues),
     })
   }
 
@@ -126,13 +165,10 @@ export default class Issues extends Component {
     try {
       this.setState({loading: true})
       token = await this.getToken();
-      const fetch_all = !(this.props.navigation.params && this.props.navigation.params.id);
+      const fetch_all = !(this.props.navigation.state.params && this.props.navigation.state.params.id);
       const url = fetch_all
                     ? 'http://localhost:4000/api/v1/issues/all' + '?page=' + this.state.page
                     : `http://localhost:4000/api/v1/projects/${this.props.navigation.state.params.id}/issues?page=${this.state.page}`;
-
-
-      if (!fetch_all){debugger;}
 
       let response = await fetch(url, {
             method: 'GET',
@@ -162,53 +198,33 @@ export default class Issues extends Component {
   }
 
 
-  async _getProjects() {
-    try {
-      this.setState({loading: true})
-      const token = await this.getToken();
-      let response = await fetch('http://localhost:4000/api/v1/projects', {
-        method: 'GET',
-        headers: {
-          'x-is-native': 'true',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token=' + token
-        },
-      });
-      let responseJson = await response.json();
-      if (response.status >= 200 && response.status < 300) {
-        return responseJson.projects;
-      } else {
-        throw responseJson;
-      }
-    } catch(error) {
-      console.log('cannot get projects: ', error);
-    } finally {
-      this.setState({loading: false})
-    }
+  _renderRow(data, sectionID, rowID){
+    if(rowID == 0) { return null; }
+    return (
+      <ListItem
+        style={{marginLeft: 0, paddingLeft: 15}}
+        onPress={()=>{ this.props.navigation.navigate('form', { id: 'hoge', name: 'hoge' }) }}>
+        <Body>
+          <Text>{String(data.name)}</Text>
+          <Text note>{data.project_name} | updated {data.updated_at}</Text>
+          {data.tags.length > 0
+            ? <Text note>{data.tags.join(', ')}</Text>
+            : null}
+        </Body>
+      </ListItem>
+    )
   }
 
-  _setProjects(items){
-    debugger;
-    this.props.navigation.setParams({
-      projects: items
-    })
-  }
-
-  _renderRow(data){
-    if ( data.type == 'date' ){
-      return <Separator bordered><Text>{data.data}</Text></Separator>;
-    } else {
-      return (
-        <ListItem
-          onPress={()=>{ this.props.navigation.navigate('form', { id: 'hoge', name: 'hoge' }) }}>
-          <Body><Text>{data.data.name}</Text></Body>
-        </ListItem>
-      )
-    }
+  _renderSectionHeader(sectionData, sectionID) {
+    return (
+      <ListItem style={{backgroundColor: 'black', marginLeft: 0, paddingLeft: 15}}>
+        <Text style={{color: '#fff'}}>{sectionData[0]}</Text>
+      </ListItem>
+    )
   }
 
   _onRefresh(){
+    if(this.state.refreshing){ return; }
     this.setState({refreshing: true});
     (async ()=>{
       const items = await this._getIssues();
@@ -221,38 +237,33 @@ export default class Issues extends Component {
     }).then(()=>{
     })
   }
-  renderRefreshControl(){
-    return (
-      <RefreshControl
-        refreshing={this.state.refreshing}
-        onRefresh={this._onRefresh.bind(this)} />
-    )
-  }
-
   render() {
     return(
-      <Container>
-        <Header>
-          <Left>
-            <Button transparent onPress={()=>{this.props.navigation.navigate('DrawerOpen')}}>
-              <Icon name='menu' />
-            </Button>
-          </Left>
-          <Body>
-            <Title>Issues</Title>
-          </Body>
-          <Right />
+      <Container style={{backgroundColor: '#fff'}}>
+        <Header searchBar rounded>
+          <Button
+            style={{marginRight: 20}}
+            transparent
+            onPress={()=>{this.props.navigation.navigate('DrawerOpen')}}>
+            <Icon name='menu' />
+          </Button>
+          <Item>
+            <Input placeholder="イシューを探す" />
+          </Item>
+          <Button transparent onPress={()=>{console.log('search!')}}>
+            <Icon name="ios-search" />
+          </Button>
         </Header>
-        {/* <Content refreshControl={this.renderRefreshControl()}> */}
-        <Content>
-          <List
-            dataArray={this.state.issues}
-            onEndReached={this._onRefresh.bind(this)}
-            renderRow={this._renderRow.bind(this) } />
-          {this.props.refreshing
-            ? <Text style={{height: 80, marginBottom: 100}}>loading</Text>
-            : null}
-        </Content>
+        <ListView
+          dataSource={this.state.dataSource}
+          onEndReachedThreshold={100}
+          onEndReached={this._onRefresh.bind(this)}
+          enableEmptySections={true}
+          renderSectionHeader={this._renderSectionHeader.bind(this)}
+          renderRow={this._renderRow.bind(this)}
+          renderFooter={() => {
+            return <ActivityIndicator size='large' animation={this.state.refreshing}/>;
+          }}/>
       </Container>
     );
   }

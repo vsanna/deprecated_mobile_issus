@@ -53,7 +53,6 @@ export default class Login extends Component {
       let token = await AsyncStorage.getItem(AUTH_TOKEN);
       if(!token) {
           console.log("Token not set");
-          // if( this.props.navigation.state.routeName !== 'login') { this.props.navigation.navigate('login'); }
       } else {
         this.setState({token: token});
         return token;

@@ -23,6 +23,7 @@ import {
   Label
 } from 'native-base';
 
+import Splash from './components/Splash.js';
 import Login from './components/Login.js';
 import Signup from './components/Signup.js';
 import Issues from  './components/Issues.js';
@@ -84,6 +85,7 @@ const Home = TabNavigator(
 
 const LoginPart = StackNavigator(
   {
+    splash: { screen: Splash },
     login: { screen: Login },
     signup: { screen: Signup }
   },
@@ -104,7 +106,7 @@ const MainPart = DrawerNavigator(
 
 const WholeNavigator = StackNavigator(
   {
-    login: { screen: LoginPart },
+    loginPart: { screen: LoginPart },
     main: { screen: MainPart }
   },
   {

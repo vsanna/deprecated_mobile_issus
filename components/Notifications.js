@@ -136,28 +136,32 @@ export default class Notifications extends Component {
         throw responseJson;
       }
     } catch(error) {
-      console.log('cannot get issues: ', error);
+      console.log('cannot get notifications: ', error);
     } finally {
       this.setState({loading: false})
     }
   }
 
   _renderRow(data){
-        <ListItem
-          onPress={()=>{ this.props.navigation.navigate('notification', { href: data.href }) }}>
-          <Body>
-            <Text>{data.message}</Text>
-            <Text note>{data.sub_message}</Text>
-          </Body>
-        </ListItem>
+    return(
+      <ListItem
+        onPress={()=>{ this.props.navigation.navigate('notification', { href: data.href }) }}>
+        <Body>
+          <Text>{data.message}</Text>
+          <Text note>{data.sub_message}</Text>
+        </Body>
+      </ListItem>
+    )
   }
 
   _onRefresh(){
+    console.log('fire notifications');
+    return;
     this.setState({refreshing: true});
     (async ()=>{
-      const items = await this._getIssues();
-      const newIssues = this.state.issues.splice().concat(items);
-      this._setIssues(newIssues);
+      const items = await this._getNotifications();
+      const newNotifications = this.state.notifications.slice().concat(items);
+      this._setNotifications(newNotifications);
       this.setState({refreshing: false});
     })().catch((e) => {
       console.log(e);
